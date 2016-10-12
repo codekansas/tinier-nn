@@ -10,7 +10,6 @@
 
 #include "utils.h"
 #include <time.h>
-#include <stdlib.h>
 
 
 typedef struct _matrix {

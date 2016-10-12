@@ -18,12 +18,8 @@ int main() {
 	layer2 = build_layer(64, 32);
 	layer1.next = &layer2;
 
-	// Adds random weights for testing.
-	fill_vec(&input_vec, 0);
-	fill_mat(&layer1.weights, 0);
-	fill_mat(&layer2.weights, -1);
-
-	get_result(&input_vec, &layer1);
+	vector *output = get_result(&input_vec, &layer1);
+	print_vec(output);
 
 	return 0;
 }

@@ -1,4 +1,7 @@
 
+# virtualenv
+venv/
+ENV/
 
 # ide
 .cproject

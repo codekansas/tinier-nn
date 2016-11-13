@@ -1,8 +1,8 @@
 /*
  * matrix.h
  *
- *  Created on: Oct 12, 2016
- *      Author: moloch
+ * Performs vector-matrix operations associated with the Binarized Neural
+ * Network architecture.
  */
 
 #ifndef MATRIX_H_
@@ -91,7 +91,8 @@ void matmul(vector *from, vector *to, matrix *by) {
 			d <<= 1;
 			data_t c = 0;
 			for (dim_t k = 0; k < from_h; k++) {
-				c += bitsum(by->data[((i * INT_SIZE) + j) * from_h + k] ^ from->data[k]);
+				c += bitsum(by->data[((i * INT_SIZE) + j) * from_h + k] ^
+						    from->data[k]);
 			}
 
 			// Threshold function.
@@ -105,7 +106,8 @@ void matmul(vector *from, vector *to, matrix *by) {
 void print_mat(matrix *m) {
 	for (dim_t i = 0; i < m->h; i++) {
 		for (dim_t j = 0; j < m->w; j++) {
-			log_str((m->data[(i * m->w + j) / INT_SIZE] & (1 << (j % INT_SIZE))) ? "1" : "0");
+			log_str((m->data[(i * m->w + j) / INT_SIZE] &
+					(1 << (j % INT_SIZE))) ? "1" : "0");
 		}
 		log_str("\n");
 	}
@@ -114,7 +116,8 @@ void print_mat(matrix *m) {
 
 void print_vec(vector *v) {
 	for (dim_t i = 0; i < v->h; i++) {
-		log_str((v->data[i / INT_SIZE] & (1 << (i % INT_SIZE))) ? "1\n" : "0\n");
+		log_str((v->data[i / INT_SIZE] &
+				(1 << (i % INT_SIZE))) ? "1\n" : "0\n");
 	}
 }
 

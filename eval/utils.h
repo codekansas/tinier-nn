@@ -1,10 +1,8 @@
 /*
  * utils.h
  *
- *  Created on: Oct 12, 2016
- *      Author: moloch
- *
- * When porting to Arduino, some values may have to be updated.
+ * When porting to a different embedded system, these values should be updated
+ * for the particular compiler.
  */
 
 #ifndef UTILS_H_
@@ -13,19 +11,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Defines types associated with matrices / vectors.
+/*
+ * Defines types associated with matrices / vectors.
+ */
 typedef unsigned int dim_t;
 typedef unsigned int data_t;
 typedef int bool_t;
 
-// Different for other Arduinos.
+/*
+ * Defines the number of bits in a single int.
+ */
 #define INT_SIZE (sizeof(int) * 8)
 
-// Failure exit (should show something to the user).
+/*
+ * Failure exit. Uses a system call, so it should probably be generic in order
+ * to work on other platforms.
+ */
 void exit_failure() {
 	exit(EXIT_FAILURE);
 }
 
+/*
+ * Generic operation for logging string information. It could just be ignored.
+ */
 void log_str(const char *x) {
 	fprintf(stderr, "%s", x);
 }
@@ -36,6 +44,21 @@ data_t* allocate_memory(dim_t n) {
 		exit_failure();
 	}
 	return (data_t*) malloc(n / INT_SIZE);
+}
+
+/*
+ * next_char and next_int define generic operations for reading and writing
+ * from some data source, for loading models. These operations could be
+ * changed to read from a serial port.
+ */
+char next_char() {
+	return getchar();
+}
+
+dim_t next_int() {
+	dim_t d;
+	scanf("%u", &d);
+	return d;
 }
 
 #endif /* UTILS_H_ */

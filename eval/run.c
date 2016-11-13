@@ -1,25 +1,31 @@
 /*
  * run.c
  *
- *  Created on: Oct 12, 2016
- *      Author: moloch
+ * Sample program for loading a model and running it.
  */
 
 #include "model.h"
 
 vector input_vec;
-dense layer1, layer2;
+dense head;
 
 int main() {
 
 	// Builds the network.
 	input_vec = instantiate_vector(32);
-	layer1 = build_layer(32, 64);
-	layer2 = build_layer(64, 32);
-	layer1.next = &layer2;
+	head = load_model();  // Reads from stdin.
 
-	vector *output = get_result(&input_vec, &layer1);
-	print_vec(output);
+	// Provide a sample input vector.
+	// load_vector(&input_vec);
+	// print_vec(&input_vec);
+
+	// matmul(&input_vec, &head.outputs, &head.weights);
+	// matmul(&head.outputs, &head.next->outputs, &head.next->weights);
+
+	printf("Outputs:\n");
+	printf("h = %d\n", head.next->outputs.h);
+	printf("w = %d, h = %d\n", head.next->weights.w, head.next->weights.h);
+	printf("Done\n");
 
 	return 0;
 }

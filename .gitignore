@@ -7,4 +7,8 @@ ENV/
 .cproject
 .project
 .settings
+.pydevproject
+
+# random executables
+run
 

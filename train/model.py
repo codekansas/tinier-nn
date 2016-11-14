@@ -135,9 +135,10 @@ def save_model(path, binary_weights):
         f.write('bnn')
         for i, weight in enumerate(binary_weights):
             weight = (weight.astype(int) + 1) / 2  # Convert to 0 and 1.
-            f.write('\n' + ','.join(str(d) for d in weight.shape) + '\n')
+            f.write('\n%d,%d\n' % weight.shape)
             bstr = '\n'.join(''.join(str(int(e)) for e in r) for r in weight)
             f.write(bstr)
+        f.write('0,0')
 
 
 def main():

@@ -2,30 +2,44 @@
  * run.c
  *
  * Sample program for loading a model and running it.
+ *
+ * tinier-nn/models/model.def (the sample definition) contains weights trained
+ * for an XOR function. This file demonstrates how to initialize a model and
+ * perform a classification task.
+ *
+ * To run normally, the model needs to be piped to stdin. From this directory,
+ * run the following:
+ *
+ *   make run  # To build the file itself.
+ *   cat ../models/model.def | ./run
  */
 
 #include "model.h"
 
-vector input_vec;
-dense head;
+#define MAX_LAYERS 10
+
+vector input_vec[4];
+dense layers[MAX_LAYERS];
 
 int main() {
 
 	// Builds the network.
-	input_vec = instantiate_vector(32);
-	head = load_model();  // Reads from stdin.
+	int num_layers = load_model(layers, MAX_LAYERS);  // Load from stdin.
+	printf("%d layers in model.\n", num_layers);
 
-	// Provide a sample input vector.
-	// load_vector(&input_vec);
-	// print_vec(&input_vec);
+	// Run on XOR input vectors.
+	for (int i = 0; i < 4; i++) {
 
-	// matmul(&input_vec, &head.outputs, &head.weights);
-	// matmul(&head.outputs, &head.next->outputs, &head.next->weights);
+		// Actually allocates space for the vector itself.
+		instantiate_vector(&input_vec[i], 32);
 
-	printf("Outputs:\n");
-	printf("h = %d\n", head.next->outputs.h);
-	printf("w = %d, h = %d\n", head.next->weights.w, head.next->weights.h);
-	printf("Done\n");
+		// Adds the XOR data.
+		input_vec[i].data[0] = i << 30;
+
+		// Runs the network and prints the output.
+		vector *result = get_result(&input_vec[i], layers);
+		print_vec(result);
+	}
 
 	return 0;
 }

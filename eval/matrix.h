@@ -26,7 +26,7 @@ typedef struct _vector {
 } vector;
 
 
-matrix instantiate_matrix(int w, int h) {
+void instantiate_matrix(matrix *m, int w, int h) {
 	/* Instantiates a matrix with width w and height h.
 	 *
 	 * This should only be called once; it provides the buffer,
@@ -37,15 +37,13 @@ matrix instantiate_matrix(int w, int h) {
 		exit_failure();
 	}
 
-	matrix m;
-	m.w = w;
-	m.h = h;
-	m.data = allocate_memory(w * h * INT_SIZE);
-	return m;
+	m->w = w;
+	m->h = h;
+	m->data = allocate_memory(w * h * INT_SIZE);
 }
 
 
-vector instantiate_vector(int h) {
+void instantiate_vector(vector *v, int h) {
 	/* Instantiates a vector with height h.
 	 *
 	 * This should only be called once; it provides the buffer,
@@ -56,10 +54,8 @@ vector instantiate_vector(int h) {
 		exit_failure();
 	}
 
-	vector v;
-	v.h = h;
-	v.data = allocate_memory(h);
-	return v;
+	v->h = h;
+	v->data = allocate_memory(h);
 }
 
 
@@ -117,8 +113,9 @@ void print_mat(matrix *m) {
 void print_vec(vector *v) {
 	for (dim_t i = 0; i < v->h; i++) {
 		log_str((v->data[i / INT_SIZE] &
-				(1 << (i % INT_SIZE))) ? "1\n" : "0\n");
+				(1 << (i % INT_SIZE))) ? "1" : "0");
 	}
+	log_str("\n");
 }
 
 

@@ -55,10 +55,8 @@ char next_char() {
 	return getchar();
 }
 
-dim_t next_int() {
-	dim_t d;
-	scanf("%u", &d);
-	return d;
+void get_dims(dim_t *w, dim_t *h) {
+	scanf("%d,%d", w, h);
 }
 
 #endif /* UTILS_H_ */

@@ -17,10 +17,11 @@ typedef struct _dense {
 } dense;
 
 
-dense build_layer(dim_t num_input, dim_t num_output) {
+void build_layer(dense *buffer, dim_t num_input, dim_t num_output) {
 	/* Builds a single feedforward dense layer.
 	 *
 	 * Args:
+	 *   buffer:		pointer to location to hold data
 	 * 	 num_input:		number of input dimensions
 	 * 	 num_output:	number of output dimensions
 	 *
@@ -29,11 +30,9 @@ dense build_layer(dim_t num_input, dim_t num_output) {
 	 * 	 num_input to num_output dimensions.
 	 */
 
-	dense result;
-	result.weights = instantiate_matrix(num_input, num_output);
-	result.outputs = instantiate_vector(num_output);
-	result.next = NULL;
-	return result;
+	instantiate_matrix(&buffer->weights, num_input, num_output);
+	instantiate_vector(&buffer->outputs, num_output);
+	buffer->next = NULL;
 }
 
 
@@ -58,11 +57,11 @@ vector* get_result(vector *input, dense *head) {
 }
 
 
-dense load_model() {
+int load_model(dense *buffer, unsigned max_layers) {
 	/* Loads a model into SRAM from a text file.
 	 *
 	 * Returns:
-	 * 	 A dense struct containing the first layer in the network.
+	 * 	 number of layers in the model (-1 if there was an error);
 	 */
 
 	if (next_char() != 'b' || next_char() != 'n' || next_char() != 'n') {
@@ -70,20 +69,34 @@ dense load_model() {
 		exit_failure();
 	}
 
-	int w = next_int(), h = next_int();
-	dense input_layer = build_layer(w, h);
-	dense *head = &input_layer;
+	// Holds the dimensions of the layer.
+	dim_t w, h;
 
-	while (1) {
+	for (int layer = 0; layer < max_layers; layer++) {
+
+		// Reads in width and height;
+		get_dims(&w, &h);
+		if (w == 0 || h == 0) {
+			return layer;
+		}
+
+		// Instantiate layer itself.
+		build_layer(&buffer[layer], w, h);
+
+		// Connect previous layer to current layer.
+		if (layer > 0) {
+			buffer[layer-1].next = &buffer[layer];
+		}
 
 		// Reads in data for the current model.
-		dim_t max_v = (head->weights.w * head->weights.h) / INT_SIZE;
+		dim_t max_v = (buffer[layer].weights.w *
+					   buffer[layer].weights.h) / INT_SIZE;
 		for (dim_t i = 0; i < max_v; i++) {
 			data_t d = 0;
 			dim_t j = 0;
 			while (j < INT_SIZE) {
 				char c = next_char();
-				if (c != '0' && c != '1') {
+				if (c == '\n') {
 					continue;
 				}
 
@@ -93,47 +106,11 @@ dense load_model() {
 				}
 				j++;
 			}
-			head->weights.data[i] = d;
+			buffer[layer].weights.data[i] = d;
 		}
-
-		// Reads in width and height;
-		w = next_int();
-		h = next_int();
-		if (w == 0 || h == 0) break;
-
-		// Adds another layer to the network.
-		dense next_layer = build_layer(w, h);
-		head->next = &next_layer;
-		head = &next_layer;
 	}
 
-	return input_layer;
-}
-
-
-void load_vector(vector *input) {
-	/* Reads inputs until a vector is full, then returns;
-	 *
-	 * Args:
-	 * 	 input:    pointer to the vector to load.
-	 */
-	for (dim_t i = 0; i < input->h / INT_SIZE; i++) {
-		data_t d = 0;
-		dim_t j = 0;
-		while (j < INT_SIZE) {
-			char c = next_char();
-			if (c != '0' && c != '1') {
-				continue;
-			}
-
-			d <<= 1;
-			if (c == '1') {
-				d |= 1;
-			}
-			j++;
-		}
-		input->data[i] = d;
-	}
+	return -1;
 }
 
 

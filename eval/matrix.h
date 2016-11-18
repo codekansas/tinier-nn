@@ -92,7 +92,7 @@ void matmul(vector *from, vector *to, matrix *by) {
 			}
 
 			// Threshold function.
-			d |= (c > from->h / 2) ? 0 : 1;
+			d |= (c >= from->h / 2) ? 0 : 1;
 		}
 		to->data[i] = d;
 	}

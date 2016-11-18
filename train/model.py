@@ -16,7 +16,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def add_binary_layer(prev_layer, num_outputs, inference, scope=None):
+def add_binary_layer(prev_layer, num_outputs, inference, uid):
     """Adds a binary layer to the network.
 
     Args:
@@ -24,7 +24,7 @@ def add_binary_layer(prev_layer, num_outputs, inference, scope=None):
         num_outputs:   int, number of dimensions in next hidden layer.
         inference:     bool scalar Tensor, tells the network if it is
                        the inference step.
-        scope:         string, the scope to use for this layer.
+        uid:           int, the unique identifier.
 
     Returns:
         tuple (activation, updates)
@@ -38,9 +38,9 @@ def add_binary_layer(prev_layer, num_outputs, inference, scope=None):
         return (tf.constant(1, dtype=tf.float32, shape=tensor.get_shape()),
                 tf.constant(-1, dtype=tf.float32, shape=tensor.get_shape()))
 
-    with tf.variable_scope(scope or 'binary_layer') as vs:
+    with tf.variable_scope('binary_layer_%d' % uid) as vs:
         w = tf.get_variable('w', shape=(num_inputs, num_outputs),
-                            initializer=tf.random_normal_initializer(),
+                            initializer=tf.random_normal_initializer(seed=uid),
                             trainable=True)
 
         # Binarize the weight matrix.
@@ -50,10 +50,11 @@ def add_binary_layer(prev_layer, num_outputs, inference, scope=None):
         wx = tf.matmul(prev_layer, bin_w)
 
         with tf.variable_scope('activation'):
-            p = tf.clip_by_value(wx, -1, 1.)
+            p = tf.tanh(wx)
 
             def _binomial_activation():
-                sigma = tf.random_uniform(p.get_shape()) < (p + 1) / 2
+                sigma = tf.random_uniform(
+                    p.get_shape(), seed=uid) < (p + 1) / 2
                 return tf.select(sigma, *_pos_neg_like(p))
 
             def _binary_activation():
@@ -63,7 +64,7 @@ def add_binary_layer(prev_layer, num_outputs, inference, scope=None):
                                  _binomial_activation,  # Stochastic inference.
                                  _binary_activation)  # Deterministic inference.
 
-        return activation, (bin_w, prev_layer, p, w)
+        return activation, (p, prev_layer, w, bin_w)
 
 
 def build_model(input_var, layers=[]):
@@ -89,9 +90,8 @@ def build_model(input_var, layers=[]):
             warnings.warn('Hidden layers should be multiples of '
                           '16, not %d' % num_hidden)
 
-        scope = 'binary_layer_%d' % i
         hidden_layer, update = add_binary_layer(hidden_layer, num_hidden,
-                                                inference, scope=scope)
+                                                inference, i)
         updates.append(update)
     output_layer = hidden_layer
 
@@ -102,8 +102,10 @@ def get_loss(output, target):
     return tf.reduce_mean(tf.square(output - target))
 
 
-def get_accuracy(output, target):
-    eq = tf.cast(output, tf.int32) == tf.cast(target, tf.int32)
+def get_accuracy(output, target, element_wise=True):
+    if not element_wise:
+        output, target = tf.reduce_sum(output, [1]), tf.reduce_sum(target, [1])
+    eq = tf.equal(tf.greater(output, 0), tf.greater(target, 0))
     return tf.reduce_mean(tf.cast(eq, tf.float32))
 
 
@@ -120,12 +122,12 @@ def binary_backprop(loss, output, updates):
     """
 
     backprop_updates = []
-    loss_grad, = tf.gradients(-loss, output)
+    loss_grad, = tf.gradients(loss, output)
 
-    for bin_weight, prev_activation, p, weight in updates[::-1]:
-        weight_grad, = tf.gradients(p, bin_weight, loss_grad)
-        loss_grad, = tf.gradients(p, prev_activation, loss_grad)
-        backprop_updates.append((weight_grad, weight))
+    for p, prev_layer, w, bin_w in updates[::-1]:
+        weight_grad, = tf.gradients(p, bin_w, grad_ys=loss_grad)
+        loss_grad, = tf.gradients(p, prev_layer, grad_ys=loss_grad)
+        backprop_updates.append((weight_grad, w))
 
     return backprop_updates
 
@@ -134,11 +136,12 @@ def save_model(path, binary_weights):
     with open(os.path.join(path, 'model.def'), 'w') as f:
         f.write('bnn')
         for i, weight in enumerate(binary_weights):
-            weight = (weight.astype(int) + 1) / 2  # Convert to 0 and 1.
-            f.write('\n%d,%d\n' % weight.shape)
-            bstr = '\n'.join(''.join(str(int(e)) for e in r) for r in weight)
+            weight = weight.T
+            f.write('\n%d,%d\n' % (weight.shape[1], weight.shape[0]))
+            bstr = '\n'.join(''.join('0' if e < 0 else '1' for e in r)
+                             for r in weight)
             f.write(bstr)
-        f.write('0,0')
+        f.write('\n0,0')
 
 
 def main():
@@ -165,7 +168,7 @@ def main():
                                name='input_placeholder')
     output_var = tf.placeholder(dtype=tf.float32, shape=(4, 32),
                                 name='output_placeholder')
-    layer_sizes = [32, 32]
+    layer_sizes = [64, 64, 32]
 
     # Configures data for a simple XOR task.
     input_data = np.zeros(shape=(4, 32))
@@ -190,15 +193,14 @@ def main():
         accuracy = get_accuracy(output_layer, output_var)
 
     global_step = tf.Variable(0, name='global_step', trainable=False)
-    learning_rate = tf.train.exponential_decay(0.01, global_step, 500, 0.98)
+    learning_rate = 0.01
 
     gradients = binary_backprop(loss, output_layer, updates)
-    optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate,
-                                           momentum=0.9)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
     min_op = optimizer.apply_gradients(gradients, global_step=global_step)
 
     # Get model weights.
-    weights, _, _, _ = zip(*updates)
+    _, _, _, weights = zip(*updates)
 
     best_accuracy = 0
     with tf.Session() as sess:
@@ -212,9 +214,10 @@ def main():
                                                   feed_dict=feed_dict)
                 print('Epoch = %d: Loss = %.4f, Accuracy = %.4f' %
                       (i, loss_val, accuracy_val))
-                print(sess.run([output_layer, output_var],
-                               feed_dict=feed_dict))
                 if accuracy_val > best_accuracy:
+                    for entry in sess.run(output_layer, feed_dict=feed_dict):
+                        out_str = ''.join('0' if i < 0 else '1' for i in entry)
+                        print(out_str[::-1])
                     save_model(args.save_path, sess.run(weights))
                     best_accuracy = accuracy_val
 

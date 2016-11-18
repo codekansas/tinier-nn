@@ -1,19 +1,7 @@
 /*
  * run.c
  *
- * Sample program for loading a model and running it.
- *
- * tinier-nn/models/model.def (the sample definition) contains weights trained
- * for an XOR function. This file demonstrates how to initialize a model and
- * perform a classification task.
- *
- * The weights were trained and saved using the train/model.py script.
- *
- * To run normally, the model needs to be piped to stdin. From this directory,
- * run the following:
- *
- *   make run  # To build the file itself.
- *   cat ../models/model.def | ./run
+ * Sample script for evaluating a trained model.
  */
 
 #include "model.h"
@@ -35,7 +23,7 @@ int main() {
         // Actually allocates space for the vector itself.
         instantiate_vector(&input_vec[i], 32);
 
-        // Adds the XOR data.
+        // Adds the XOR data (0 -> 00, 1 -> 01, 2 -> 10, 3 -> 11).
         input_vec[i].data[0] = i << 30;
 
         // Runs the network and prints the output.

@@ -121,9 +121,8 @@ def binary_backprop(loss, output, updates):
     loss_grad, = tf.gradients(loss, output)
 
     for p, prev_layer, w, bin_w in updates[::-1]:
-        weight_grad, = tf.gradients(p, bin_w, grad_ys=loss_grad)
-        loss_grad, = tf.gradients(p, prev_layer, grad_ys=loss_grad)
-        backprop_updates.append((weight_grad, w))
+        w_grad, loss_grad = tf.gradients(p, [bin_w, prev_layer], loss_grad)
+        backprop_updates.append((w_grad, w))
 
     return backprop_updates
 

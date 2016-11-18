@@ -28,22 +28,22 @@ typedef int bool_t;
  * to work on other platforms.
  */
 void exit_failure() {
-	exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
 }
 
 /*
  * Generic operation for logging string information. It could just be ignored.
  */
 void log_str(const char *x) {
-	fprintf(stderr, "%s", x);
+    fprintf(stderr, "%s", x);
 }
 
 data_t* allocate_memory(dim_t n) {
-	if (n % INT_SIZE != 0) {
-		log_str("Invalid shape requested for memory allocation.\n");
-		exit_failure();
-	}
-	return (data_t*) malloc(n / INT_SIZE);
+    if (n % INT_SIZE != 0) {
+        log_str("Invalid shape requested for memory allocation.\n");
+        exit_failure();
+    }
+    return (data_t*) malloc(n / INT_SIZE);
 }
 
 /*
@@ -52,11 +52,11 @@ data_t* allocate_memory(dim_t n) {
  * changed to read from a serial port.
  */
 char next_char() {
-	return getchar();
+    return getchar();
 }
 
 void get_dims(dim_t *w, dim_t *h) {
-	scanf("%d,%d", w, h);
+    scanf("%d,%d", w, h);
 }
 
 #endif /* UTILS_H_ */

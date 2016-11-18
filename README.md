@@ -15,6 +15,23 @@ The system consists of two parts:
     performs matrix multiplications using a bitwise XOR, which (probably) leads to a big improvement in time and power
     consumption (although I haven't benchmarked anything).
 
+The two sample scripts, `train/model.py` and `eval/run.c` demonstrate how to train a model to discriminate an XOR function. The model uses a lot more weights than would theoretically be necessary for this task, but together they demonstrate how to adapt the code to other use cases.
+
+## Demo
+
+To run the demo, run:
+
+    make eval/run
+    cat models/model.def | eval/run
+
+The outputs show the predictions for an XOR function.
+
+To train the model, run:
+
+    python train/model.py --save_path models/model.def
+
+This is how the `models/model.def` file was generated.
+
 ## Math Notes
 
 Encoding weights / activations with values of -1 and 1 as binary values: `-1 -> 0, 1 -> 1`. Then matrix multiplication

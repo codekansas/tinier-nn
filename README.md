@@ -49,7 +49,7 @@ Using binary weights and activations of -1 and 1:
   - Activation function then becomes `x < (2 / 2) ? 1 : 0` which gives `[1, 0]`
 
 Because the operations are done this way, I made it so that matrix dimensions must be multiples of the integer sizes.
-Padding can be used to make data line up correctly (althoguh if someone wants to change this, LMK).
+Padding can be used to make data line up correctly (although if someone wants to change this, LMK).
 
 ## To Do
 

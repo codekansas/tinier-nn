@@ -2,6 +2,8 @@
 
 A tinier framework for deploying binarized neural networks on embedded systems.
 
+I wrote a better version in C++ as a gist [here](https://gist.github.com/codekansas/3cb447e3d95ccac4c5a56ea7ffb079ce).
+
 ## About
 
 The core of this framework is the use of the Binarized Neural Network (BNN) described in [Binarized Neural Networks:
